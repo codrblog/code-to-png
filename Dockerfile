@@ -21,10 +21,11 @@ RUN chmod 755 /usr/bin/xvfb-chrome \
   && mkdir /home/docker/app \
   && chown -R docker:docker /home/docker
 
-# Variable for Karma tests to recognize chrome
-ENV CHROME_BIN=/usr/bin/google-chrome
-
 EXPOSE 5000
-
 USER docker
 WORKDIR /home/docker/app
+ENV HOME="/home/docker"
+
+RUN npm i -g pm2 && ~/npm/bin/pm2 start sockets-server.js && ~/npm/bin/pm2 start http-server.js
+
+CMD ["/usr/bin/google-chrome", "index.html"]

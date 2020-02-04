@@ -1,14 +1,36 @@
-<script src="https://pagecdn.io/lib/ace/1.4.7/ace.js" crossorigin="anonymous" integrity="sha256-C7DTYRJLG+B/VEzHGeoPMw699nsTQYPAXHKXZb+q04E=" ></script>
-<script src="https://pagecdn.io/lib/html2canvas/0.4.1/html2canvas.min.js" crossorigin="anonymous"  ></script>
+<script src="https://pagecdn.io/lib/ace/1.4.7/ace.js" crossorigin="anonymous"
+  integrity="sha256-C7DTYRJLG+B/VEzHGeoPMw699nsTQYPAXHKXZb+q04E="></script>
+<script src="https://pagecdn.io/lib/html2canvas/0.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
 
 <script>
-  var editor;
+  let socket;
+  let editor;
+
+  async function toHash(text) {
+    const buffer = new TextEncoder('utf-8').encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+  }
+
+  function reconnnect() {
+    socket = new WebSocket('ws://localhost:5000/');
+    socket.onclose = () => setTimeout(reconnnect, 3000);
+    socket.onmessage = async function (event) {
+      const code = event.data;
+      const hash = await toHash(code);
+      editor.getSession().setValue(code);
+      setTimeout(async () => {
+        const image = await render(code);
+        socket.send(JSON.stringify({ hash, image }));
+      }, 100);
+    }
+  }
 
   async function render() {
-    const canvas = await html2canvas(document.getElementById('code'));
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve));
-
-    document.getElementById('image').src = canvas.toDataURL('image/png');
+    const canvas = await new Promise((resolve) => html2canvas(document.getElementById('code'), { scale: 2, onrendered: resolve }));
+    const image = canvas.toDataURL();
+    return image.split('base64,')[1];
   }
 
   function startEditor() {
@@ -28,15 +50,12 @@
     editor.setHighlightGutterLine(false);
     editor.setShowPrintMargin(false);
     editor.setOption('displayIndentGuides', false);
-
-    // var textarea = $('#editor_content');
-    // editor.getSession().on('change', function () {
-    //   textarea.val(editor.getSession().getValue());
-    // });
-    // textarea.val(editor.getSession().getValue());
   }
 
-  document.addEventListener('DOMContentLoaded', startEditor);
+  document.addEventListener('DOMContentLoaded', () => {
+    startEditor();
+    reconnnect();
+  });
 </script>
 
 <style>
@@ -47,20 +66,13 @@
   }
 
   #editor {
-    position: absolute;
+    position: relative;
     width: 700px;
     height: 400px;
     left: calc(50% - 700px);
-  }
-
-  .center {
-    text-align: center;
+    top: 50px;
   }
 </style>
-<div class="center">
-  <button onclick="render()">update</button>
-</div>
 <div id="code">
   <div id="editor"></div>
 </div>
-<img id="image"></img>
