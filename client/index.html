@@ -7,35 +7,42 @@
   let editor;
 
   async function toHash(text) {
-    const buffer = new TextEncoder('utf-8').encode(text);
+    const buffer = new TextEncoder('utf8').encode(text);
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+
+    return Array.from(new Uint8Array(hashBuffer)).map(i => ('00' + i.toString(16)).slice(-2)).join('');
   }
 
   function reconnnect() {
-    socket = new WebSocket('ws://localhost:5000/');
-    socket.onclose = () => setTimeout(reconnnect, 3000);
-    socket.onmessage = async function (event) {
-      const code = event.data;
-      const hash = await toHash(code);
-      editor.getSession().setValue(code);
-      setTimeout(async () => {
-        const image = await render(code);
-        socket.send(JSON.stringify({ hash, image }));
-      }, 100);
+    socket = new EventSource('http://localhost:3000/events');
+    socket.onerror = () => {
+      socket.close();
+      setTimeout(reconnnect, 3000);
     }
+    socket.onmessage = async function ({data}) {
+      const event = JSON.parse(data);
+      convertToPng(event);
+    };
+  }
+
+  async function convertToPng({content}) {
+    const hash = await toHash(content);
+    editor.getSession().setValue(content);
+
+    const image = await render(content);
+    const response = JSON.stringify({ hash, image });
+    fetch('/set', { method: 'POST', body: response });
   }
 
   async function render() {
-    const canvas = await new Promise((resolve) => html2canvas(document.getElementById('code'), { scale: 2, onrendered: resolve }));
-    const image = canvas.toDataURL();
-    return image.split('base64,')[1];
+    const source = document.getElementById('code').trim();
+    const canvas = await new Promise(resolve => html2canvas(source, { scale: 2, onrendered: resolve }));
+    return canvas.toDataURL();
   }
 
   function startEditor() {
     editor = ace.edit('editor', {
-      theme: 'ace/theme/monokai',
+      theme: 'ace/theme/tomorrow_night',
       mode: 'ace/mode/typescript',
       maxLines: 500,
       minLines: 2,
@@ -50,6 +57,8 @@
     editor.setHighlightGutterLine(false);
     editor.setShowPrintMargin(false);
     editor.setOption('displayIndentGuides', false);
+
+    editor.getSession().setValue('\n\n\n');
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -68,9 +77,8 @@
   #editor {
     position: relative;
     width: 700px;
-    height: 400px;
-    left: calc(50% - 700px);
-    top: 50px;
+    left: 0px;
+    top: 0px;
   }
 </style>
 <div id="code">

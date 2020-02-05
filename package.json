@@ -1,5 +1,5 @@
 {
-  "name": "codeshot",
+  "name": "code-to-png",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,9 +9,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "ace-code-editor": "^1.2.3",
-    "html2canvas": "^1.0.0-rc.5",
-    "ws": "^7.2.1"
-  }
+  "dependencies": {}
 }

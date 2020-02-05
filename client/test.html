@@ -1,0 +1,86 @@
+<script src="https://pagecdn.io/lib/ace/1.4.7/ace.js" crossorigin="anonymous" integrity="sha256-C7DTYRJLG+B/VEzHGeoPMw699nsTQYPAXHKXZb+q04E="></script>
+
+<script>
+  let editor;
+
+  function startEditor() {
+    editor = ace.edit('editor', {
+      theme: 'ace/theme/monokai',
+      mode: 'ace/mode/typescript',
+      maxLines: 500,
+      minLines: 2,
+      fontSize: 13,
+      wrap: true,
+      useWorker: false,
+      autoScrollEditorIntoView: true
+    });
+
+    // editor.setHighlightActiveLine(false);
+    // editor.setHighlightSelectedWord(false);
+    // editor.setHighlightGutterLine(false);
+    editor.setShowPrintMargin(false);
+    // editor.setOption('displayIndentGuides', false);
+
+    editor.getSession().setValue('\n\n\n');
+  }
+
+  function render() {
+    const code = editor.getSession().getValue();
+    const image = document.getElementById('image').firstElementChild;
+
+    fetch('http://localhost:5000/get', { method: 'POST', body: editor.getSession().getValue() })
+      .then(response => response.text())
+      .then(base64 => image.src = base64)
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    startEditor();
+  });
+</script>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  #editor, #image {
+    position: absolute;
+    width: 45%;
+    height: 400px;
+    top: 150px;
+  }
+
+  #editor {
+    left: 2%;
+  }
+
+  #image {
+    right: 2%;
+    left: auto;
+  }
+
+  #button {
+    padding: 1rem;
+    text-align: center;
+  }
+
+  #button button {
+    background-color: #01aaff;
+    color: white;
+    padding: 1rem;
+    font-size: 1.4rem;
+  }
+</style>
+<div id="button">
+  <button onclick="render()">update</button>
+</div>
+<div id="code">
+  <div id="editor"></div>
+</div>
+
+<div id="image">
+  <img src="" />
+</div>
+

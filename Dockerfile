@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 ADD xvfb-chrome /usr/bin/xvfb-chrome
 
 RUN chmod 755 /usr/bin/xvfb-chrome \
-  && rm /usr/bin/google-chrome \
+  && mv /usr/bin/google-chrome /usr/bin/google-chrome-bin \
   && ln -s /usr/bin/xvfb-chrome /usr/bin/google-chrome \
   && usermod -l docker node \
   && usermod -m -d /home/docker docker \
@@ -28,4 +28,4 @@ ENV HOME="/home/docker"
 
 RUN npm i -g pm2 && ~/npm/bin/pm2 start sockets-server.js && ~/npm/bin/pm2 start http-server.js
 
-CMD ["/usr/bin/google-chrome", "index.html"]
+CMD ["/usr/bin/google-chrome", "http://localhost:3000/"]
