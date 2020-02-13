@@ -35,7 +35,7 @@
   }
 
   async function render() {
-    const source = document.getElementById('code').trim();
+    const source = document.getElementById('code');
     const canvas = await new Promise(resolve => html2canvas(source, { scale: 2, onrendered: resolve }));
     return canvas.toDataURL();
   }
